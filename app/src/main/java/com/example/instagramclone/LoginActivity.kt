@@ -30,6 +30,7 @@ class LoginActivity : AppCompatActivity() {
             val email = binding.etEmail.text.toString()
             val password = binding.etPassword.text.toString()
             if(email.isBlank() || password.isBlank()){
+                binding.btnLogin.isEnabled = true
                 Toast.makeText(this, "Please fill the details!", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -40,6 +41,7 @@ class LoginActivity : AppCompatActivity() {
                 goPostsActivity()
                 }
                 else{
+                    binding.btnLogin.isEnabled = true
                     Log.i(TAG, "Sign In Failed", task.exception)
                     Toast.makeText(this, "Authentication Failed!", Toast.LENGTH_SHORT).show()
                 }
