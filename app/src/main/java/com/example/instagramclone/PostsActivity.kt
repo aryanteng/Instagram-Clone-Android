@@ -65,6 +65,11 @@ open class PostsActivity : AppCompatActivity() {
                 }
             }
         }
+
+        binding.fabCreate.setOnClickListener {
+            val intent = Intent(this, CreateActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
