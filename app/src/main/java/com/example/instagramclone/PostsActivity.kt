@@ -10,13 +10,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.instagramclone.databinding.ActivityLoginBinding
 import com.example.instagramclone.databinding.ActivityPostsBinding
 import com.example.instagramclone.models.Post
+import com.example.instagramclone.models.User
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
 private const val TAG = "PostsActivity"
-class PostsActivity : AppCompatActivity() {
+open class PostsActivity : AppCompatActivity() {
 
+    private var signedInUser: User? = null
     private lateinit var binding: ActivityPostsBinding
     private var posts: MutableList<Post> = mutableListOf()
     private lateinit var postsAdapter: PostsAdapter
@@ -33,7 +36,21 @@ class PostsActivity : AppCompatActivity() {
         binding.rvPosts.layoutManager = LinearLayoutManager(this)
 
         val db = Firebase.firestore
-        val postsReference = db.collection("Posts").limit(20).orderBy("createdAt", Query.Direction.DESCENDING)
+
+        db.collection("Users").document(FirebaseAuth.getInstance().currentUser?.uid as String).get().addOnSuccessListener { userSnapshot ->
+            signedInUser = userSnapshot.toObject(User::class.java)
+            Log.i(TAG, "Signed In User: $signedInUser")
+        }.addOnFailureListener {error ->
+            Log.i(TAG, "Failure in fetching current user", error)
+        }
+
+        var postsReference = db.collection("Posts").limit(20).orderBy("createdAt", Query.Direction.DESCENDING)
+        val username = intent.getStringExtra("username")
+        if(username != null){
+            supportActionBar?.title = username
+            postsReference = postsReference.whereEqualTo("user.username", username)
+        }
+
         postsReference.addSnapshotListener { snapshot, error ->
             if(error != null || snapshot == null){
                 Log.i(TAG, "Error when querying posts", error)
@@ -56,8 +73,9 @@ class PostsActivity : AppCompatActivity() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if(item.itemId === R.id.menu_profile){
+        if(item.itemId == R.id.menu_profile){
             val intent = Intent(this, ProfileActivity::class.java)
+            intent.putExtra("username", signedInUser?.username)
             startActivity(intent)
         }
         return super.onOptionsItemSelected(item)
