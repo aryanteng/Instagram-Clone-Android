@@ -6,6 +6,8 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import com.example.instagramclone.models.Post
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 
@@ -15,15 +17,15 @@ class PostsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_posts)
         val db = Firebase.firestore
-        val postsReference = db.collection("Posts")
+        val postsReference = db.collection("Posts").limit(20).orderBy("createdAt", Query.Direction.DESCENDING)
         postsReference.addSnapshotListener { snapshot, error ->
             if(error != null || snapshot == null){
                 Log.i(TAG, "Error when querying posts", error)
             }
             if (snapshot != null) {
-                for (item in snapshot.documents){
-                    Log.i(TAG, "Document ${item.id}: ${item.data}")
-
+                val postList = snapshot.toObjects(Post::class.java)
+                for (post in postList){
+                    Log.i(TAG, "Post $post")
                 }
             }
         }
