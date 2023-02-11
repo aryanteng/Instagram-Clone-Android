@@ -9,12 +9,15 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import com.example.instagramclone.databinding.ActivityCreateBinding
+import com.example.instagramclone.models.Post
 import com.example.instagramclone.models.User
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 
 private const val TAG = "CreateActivity"
+const val EXTRA_USERNAME = "EXTRA_USERNAME"
 class CreateActivity : AppCompatActivity() {
     private var signedInUser: User? = null
     private lateinit var binding: ActivityCreateBinding
@@ -71,7 +74,32 @@ class CreateActivity : AppCompatActivity() {
             Toast.makeText(this, "User must be signed in!", Toast.LENGTH_SHORT).show()
             return
         }
-
+        binding.btnPost.isEnabled = false
+        var storageRef = Firebase.storage.reference
+        val photoRef = storageRef.child("images/${System.currentTimeMillis()}--photo.jpg")
+        val photoTask = photoRef.putFile(photoURI!!)
+        photoTask.continueWithTask { photoRef.downloadUrl }.continueWithTask {
+            val post = Post(
+                binding.etCaption.text.toString(),
+                it.result.toString(),
+                System.currentTimeMillis(),
+                signedInUser
+            )
+            val db = Firebase.firestore
+            db.collection("Posts").add(post)
+        }.addOnCompleteListener{
+            binding.btnPost.isEnabled = true
+            if(!it.isSuccessful){
+                Log.e(TAG, "Some error occurred with Firebase", it.exception)
+                Toast.makeText(this, "Failed to save post!", Toast.LENGTH_SHORT).show()
+            }
+            binding.etCaption.text.clear()
+            binding.ivImage.setImageResource(0)
+            Toast.makeText(this, "Success!", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, ProfileActivity::class.java)
+            intent.putExtra(EXTRA_USERNAME, signedInUser?.username)
+            startActivity(intent)
+        }
     }
 
 }
